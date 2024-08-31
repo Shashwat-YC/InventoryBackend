@@ -1,0 +1,987 @@
+openapi: "3.0.3"
+info:
+  title: "inventory Backend API"
+  description: "inventory Backend API"
+  version: "1.0.0"
+servers:
+  - url: "http://localhost:8080"
+paths:
+  /inventory/packet/get/{rfid}:
+    parameters:
+      - name: rfid
+        in: path
+        required: true
+        schema:
+          type: "string"
+        description: "RFID of the packet to get"
+    get:
+      summary: "Get packet by RFID"
+      responses:
+        '200':
+          description: "Successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PacketInfo"
+        '404':
+          description: "Packet not found"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "No packet with given rfid found."
+
+  /inventory/packet/getall:
+    post:
+      summary: "Get all packets with given rfids"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "array"
+              items:
+                type: "string"
+      responses:
+        '200':
+          description: "Successful operation"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/PacketInfo"
+
+  /inventory/packet/add:
+    put:
+      summary: "Add new packet"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryAdd"
+      responses:
+        '201':
+          description: "Successful operation"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "Packet created successfully."
+        '500':
+          description: "Internal server error"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "Failed to create packet: Error message"
+
+  /inventory/packet/assign:
+    post:
+      summary: "Assign packet data"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryAssign"
+      responses:
+        '201':
+          description: "Successful operation"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "Packet assigned successfully."
+        '404':
+          description: "Packet not found"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "No unassigned packet with given id found."
+        '500':
+          description: "Internal server error"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "Failed to assign packet: Error message"
+
+  /inventory/packet/update:
+    post:
+      summary: "Update packet data"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryUpdate"
+      responses:
+        '200':
+          description: "Successful operation"
+        '400':
+          description: "Bad request"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "Either id or rfid must be provided."
+        '404':
+          description: "Packet not found"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "No packet with given rfid found."
+        '500':
+          description: "Internal server error"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "Failed to update packet: Error message"
+
+  /inventory/packet/add_unassigned:
+    put:
+      summary: "Add new unassigned packet"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryAddUnassigned"
+      responses:
+        '201':
+          description: "Successful operation"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "Unassigned packet created successfully."
+        '500':
+          description: "Internal server error"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "Failed to create unassigned packet: Error message"
+
+  /inventory/spare_part/get/{code}:
+    parameters:
+      - name: code
+        in: path
+        required: true
+        schema:
+          type: "string"
+        description: "Code of the spare part to get"
+    get:
+      summary: "Get spare part by code"
+      responses:
+        '200':
+          description: "Successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SparePart"
+        '404':
+          description: "Spare part not found"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "No spare part with given code found."
+
+  /inventory/machine/get/{floor}:
+    get:
+      summary: "Get machines on a floor"
+      parameters:
+        - name: floor
+          in: path
+          required: true
+          schema:
+            type: "integer"
+          description: "Floor number"
+      responses:
+        '200':
+          description: "Successful operation"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/Machine"
+
+  /inventory/machine/get_locations/{model}:
+    parameters:
+      - name: model
+        in: path
+        required: true
+        schema:
+          type: "string"
+        description: "Machine model"
+    get:
+      summary: "Get all machine packet locations"
+      responses:
+        '200':
+          description: "Successful operation"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/LocationInfo"
+
+  /inventory/machine/get_parts/{machine}:
+    parameters:
+      - name: machine
+        in: path
+        required: true
+        schema:
+          type: "string"
+        description: "Machine model"
+    get:
+      summary: "Get all spare parts for a machine"
+      responses:
+        '200':
+          description: "Successful operation"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/SparePartInfo"
+
+
+  /pms/jobs/get:
+    get:
+      summary: "Get PMS jobs"
+      parameters:
+        - $ref: "#/components/parameters/jobGetStatus"
+        - $ref: "#/components/parameters/jobGetDueWithin"
+        - $ref: "#/components/parameters/jobGetPlace"
+        - $ref: "#/components/parameters/jobGetLimit"
+      responses:
+        '200':
+          description: "Successful operation"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/JobWithMachine"
+
+  /pms/jobs/get_parts/{code}:
+    parameters:
+      - name: code
+        in: path
+        required: true
+        schema:
+          type: "string"
+        description: "Code of the job to get parts"
+    get:
+      summary: "Get parts of a job"
+      responses:
+        '200':
+          description: "Successful operation"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/SparePart"
+
+  /pms/jobs/start:
+    post:
+      summary: "Start a job"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobStart"
+      responses:
+        '200':
+          description: "Successful operation"
+        '404':
+          description: "Job not found"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "No job with given code found."
+        '500':
+          description: "Internal server error"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "Failed to start job: Error message"
+
+  /pms/jobs/complete:
+    post:
+      summary: "Complete a job"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobComplete"
+      responses:
+        '200':
+          description: "Successful operation"
+        '404':
+          description: "Job not found"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "No job with given code found."
+        '500':
+          description: "Internal server error"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "Failed to complete job: Error message"
+
+  /pms/jobs/update/pic:
+    post:
+      summary: "Update PIC of a job"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobUpdatePIC"
+      responses:
+        '200':
+          description: "Successful operation"
+        '404':
+          description: "Job not found"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "No job with given code found."
+        '500':
+          description: "Internal server error"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "Failed to update job: Error message"
+
+
+  /location/add/unlinked:
+    put:
+      summary: "Add new location"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                floor:
+                  type: "integer"
+                room:
+                  type: "integer"
+                rack:
+                  type: "integer"
+                shelf:
+                  type: "integer"
+      responses:
+        '201':
+          description: "Successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  id:
+                    type: "integer"
+                    description: "ID of the created location"
+        '500':
+          description: "Internal server error"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "Failed to create location: Error message"
+
+  /location/add/linked:
+    put:
+      summary: "Add new location linked to machine"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                model:
+                  type: "string"
+                floor:
+                  type: "integer"
+                room:
+                  type: "integer"
+                rack:
+                  type: "integer"
+                shelf:
+                  type: "integer"
+      responses:
+        '201':
+          description: "Successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  id:
+                    type: "integer"
+                    description: "ID of the created location"
+        '500':
+          description: "Internal server error"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "Failed to create location: Error message"
+
+  /location/add/floor:
+    put:
+      summary: "Add new floor"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                id:
+                  type: "integer"
+                name:
+                  type: "string"
+      responses:
+        '201':
+          description: "Successful operation"
+        '409':
+          description: "Floor already exists"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "Floor with given id already exists."
+        '500':
+          description: "Internal server error"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "Failed to create floor: Error message"
+
+  /location/add/room:
+    put:
+      summary: "Add new room"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                name:
+                  type: "string"
+      responses:
+        '201':
+          description: "Successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  id:
+                    type: "integer"
+                    description: "ID of the created room"
+        '409':
+          description: "Room already exists"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "Room with given id already exists."
+        '500':
+          description: "Internal server error"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "Failed to create room: Error message"
+
+  /location/update/all:
+    post:
+      summary: "Update all location data"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                id:
+                  type: "integer"
+                floor:
+                  type: "integer"
+                room:
+                  type: "integer"
+                rack:
+                  type: "integer"
+                  required: false
+                shelf:
+                  type: "integer"
+                  required: false
+      responses:
+        '200':
+          description: "Successful operation"
+        '404':
+          description: "Location not found"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "No location with given id found."
+        '500':
+          description: "Internal server error"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "Failed to update location: Error message"
+
+  /location/update/link_machine:
+    post:
+      summary: "Link location to machine"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                id:
+                  type: "integer"
+                model:
+                  type: "string"
+      responses:
+        '200':
+          description: "Successful operation"
+        '500':
+          description: "Internal server error"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "Failed to link location to machine: Error message"
+
+  /location/get_rooms/{floor}:
+    get:
+      summary: "Get rooms on a floor"
+      parameters:
+        - name: floor
+          in: path
+          required: true
+          schema:
+            type: "integer"
+          description: "Floor number"
+      responses:
+        '200':
+          description: "Successful operation"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/RoomInfo"
+
+  /location/get_rooms/all:
+    get:
+      summary: "Get all rooms"
+      responses:
+        '200':
+          description: "Successful operation"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/RoomInfo"
+
+  /location/get_floors:
+    get:
+      summary: "Get all floors"
+      responses:
+        '200':
+          description: "Successful operation"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/FloorInfo"
+
+  /location/get_packets/{location}:
+    get:
+      summary: "Get packets in a location"
+      parameters:
+        - name: location
+          in: path
+          required: true
+          schema:
+            type: "integer"
+          description: "Location ID"
+      responses:
+        '200':
+          description: "Successful operation"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/PacketInfo"
+
+  /location/get_packets/full:
+    get:
+      summary: "Get all packets with locations"
+      parameters:
+        - name: floor
+          in: query
+          required: true
+          schema:
+            type: "integer"
+          description: "Floor number"
+        - name: room
+          in: query
+          required: true
+          schema:
+            type: "integer"
+          description: "Room number"
+        - name: rack
+          in: query
+          required: false
+          schema:
+            type: "integer"
+          description: "Rack number"
+        - name: shelf
+          in: query
+          required: false
+          schema:
+            type: "integer"
+          description: "Shelf number"
+      responses:
+        '200':
+          description: "Successful operation"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/PacketInfo"
+
+components:
+  schemas:
+    PacketType:
+      type: "string"
+      enum:
+        - "NEW"
+        - "RECONDITIONED"
+        - "OLD"
+
+    ScheduleType:
+      type: "string"
+      enum:
+        - "CA"
+        - "RH"
+
+    JobPlace:
+      type: "string"
+      enum:
+        - "SAILING"
+        - "DOCK"
+        - "PORT"
+
+    JobKind:
+      type: "string"
+      enum:
+        - "PMS"
+        - "PCM"
+
+    PIC:
+      type: "string"
+      enum:
+        - "L1"
+        - "L2"
+        - "L3"
+
+    Instant:
+      type: "string"
+      format: "YYYY-MM-DDTHH:mm:ss.nanosZ"
+      example: "2020-12-09T09:16:56.000124Z"
+      description: "Instant ISO-8601 format"
+    
+    InventoryAdd:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+        rfid:
+          type: "string"
+        partCode:
+          type: "string"
+        quantity:
+          type: "integer"
+        type:
+          $ref: "#/components/schemas/PacketType"
+        locationId:
+          type: "integer"
+      
+    InventoryAssign:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+        partCode:
+          type: "string"
+        quantity:
+          type: "integer"
+        type:
+          $ref: "#/components/schemas/PacketType"
+        locationId:
+          type: "integer"
+    
+    InventoryUpdate:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+        rfid:
+          type: "string"
+        quantity:
+          type: "integer"
+        type:
+          $ref: "#/components/schemas/PacketType"
+        locationId:
+          type: "integer"
+    
+    InventoryAddUnassigned:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+        rfid:
+          type: "string"
+    
+    JobStatus:
+      type: "string"
+      enum:
+        - "COMPLETED"
+        - "IN_PROGRESS"
+        - "PLANNING"
+    
+    JobDueWithin:
+      type: "string"
+      enum:
+        - "DAILY"
+        - "WEEKLY"
+        - "MONTHLY"
+    
+    JobStart:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+        packets:
+          type: "array"
+          items:
+            type: "integer"
+    
+    JobComplete:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+        packets:
+          type: "object"
+          format: "map"
+    
+    JobUpdatePIC:
+      type: "object"
+      properties:
+        code:
+          type: "string"
+        pic:
+          $ref: "#/components/schemas/PIC"
+    
+    PacketInfo:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+        rfid:
+          type: "string"
+        partInfo:
+          $ref: "#/components/schemas/SparePartInfo"
+        quantity:
+          type: "integer"
+        type:
+          $ref: "#/components/schemas/PacketType"
+        location:
+          $ref: "#/components/schemas/LocationInfo"
+
+    SparePartInfo:
+      type: "object"
+      properties:
+        code:
+          type: "string"
+        name:
+          type: "string"
+        partNo:
+          type: "string"
+        machineModel:
+          type: "string"
+
+    LocationInfo:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+        floor:
+          type: "integer"
+        floorName:
+          type: "string"
+        room:
+          type: "integer"
+        roomName:
+          type: "string"
+        rack:
+          type: "integer"
+        shelf:
+          type: "integer"
+
+    RoomInfo:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+        name:
+          type: "string"
+
+    FloorInfo:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+        name:
+          type: "string"
+
+    SparePart:
+      type: "object"
+      properties:
+        rob:
+          type: "integer"
+        code:
+          type: "string"
+        name:
+          type: "string"
+        partNo:
+          type: "string"
+        machineModel:
+          type: "string"
+        packets:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/PacketInfo"
+
+    ScheduleInfo:
+      type: "object"
+      properties:
+        type:
+          $ref: "#/components/schemas/ScheduleType"
+        interval:
+          type: "integer"
+
+    Job:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+        code:
+          type: "string"
+        description:
+          type: "string"
+        place:
+          $ref: "#/components/schemas/JobPlace"
+        kind:
+          $ref: "#/components/schemas/JobKind"
+        scheduleInfo:
+          $ref: "#/components/schemas/ScheduleInfo"
+        pic:
+          $ref: "#/components/schemas/PIC"
+        nextSchedule:
+          $ref: "#/components/schemas/Instant"
+
+    JobWithMachine:
+      type: "object"
+      properties:
+        job:
+          $ref: "#/components/schemas/Job"
+        machine:
+          $ref: "#/components/schemas/Machine"
+
+    Machine:
+      type: "object"
+      properties:
+        model:
+          type: "string"
+        no:
+          type: "integer"
+        lastMaintenance:
+          $ref: "#/components/schemas/Instant"
+        avgRH:
+          type: "integer"
+        name:
+          type: "string"
+        maker:
+          type: "string"
+
+  parameters:
+    jobGetStatus:
+      name: status
+      required: false
+      in: query
+      schema:
+        $ref: "#/components/schemas/JobStatus"
+
+    jobGetDueWithin:
+      name: dueWithin
+      required: false
+      in: query
+      schema:
+        $ref: "#/components/schemas/JobDueWithin"
+
+    jobGetPlace:
+      name: place
+      required: false
+      in: query
+      schema:
+        $ref: "#/components/schemas/JobPlace"
+
+    jobGetLimit:
+      name: limit
+      required: false
+      in: query
+      schema:
+        type: "integer"
+        default: 30
+        description: "-1 for no limit"
